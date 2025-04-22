@@ -102,8 +102,7 @@ I first started by creating my own custom Imputer that fills in the NA values of
 
 Then I created my model: 
 
-```python
-    from sklearn.pipeline import Pipeline
+``` from sklearn.pipeline import Pipeline
     from sklearn.compose import  ColumnTransformer
     from sklearn.preprocessing import OneHotEncoder
     from sklearn.linear_model import LinearRegression
@@ -127,35 +126,34 @@ Then I created my model:
 
 After tweaking the columns used and other factors, I arrived at my final model:
 
-```python
-from sklearn.linear_model import Ridge, Lasso, ElasticNet, BayesianRidge
-from sklearn.preprocessing import PowerTransformer, QuantileTransformer
-from sklearn.model_selection import GridSearchCV
+``` from sklearn.linear_model import Ridge, Lasso, ElasticNet, BayesianRidge
+    from sklearn.preprocessing import PowerTransformer, QuantileTransformer
+    from sklearn.model_selection import GridSearchCV
 
-qt = QuantileTransformer(
-    n_quantiles=100,
-    output_distribution="normal",
-    random_state=98
-)
+    qt = QuantileTransformer(
+        n_quantiles=100,
+        output_distribution="normal",
+        random_state=98
+    )
 
-pipeline = Pipeline([
-    ('imputer', CategoryMeanImputer('CAUSE.CATEGORY', 'DEMAND.LOSS.MW')),
-    ('features', ColumnTransformer([
-        ('detail_ohe', OneHotEncoder(handle_unknown='ignore'), ['CAUSE.CATEGORY.DETAIL', 'CLIMATE.REGION']),
-        ("quantile_loss", qt, ["DEMAND.LOSS.MW", 'POPPCT_URBAN'])
-    ], remainder='drop')), #I only want to use cause.category to impute demand.loss.mw and not in the final model
-    ('regressor', Ridge())
-])
-
+    pipeline = Pipeline([
+        ('imputer', CategoryMeanImputer('CAUSE.CATEGORY', 'DEMAND.LOSS.MW')),
+        ('features', ColumnTransformer([
+            ('detail_ohe', OneHotEncoder(handle_unknown='ignore'), ['CAUSE.CATEGORY.DETAIL', 'CLIMATE.REGION']),
+            ("quantile_loss", qt, ["DEMAND.LOSS.MW", 'POPPCT_URBAN'])
+        ], remainder='drop')), #I only want to use cause.category to impute demand.loss.mw and not in the final model
+        ('regressor', Ridge())
+    ])
 
 
-gridSearch = GridSearchCV(
-    pipeline,
-    param_grid = {'regressor__solver': ["auto","lsqr","sparse_cg","sag"], 
-                  'regressor__max_iter': [100, 1000, 5000, 10000, 50000], 
-                  'regressor__alpha': [0, 0.001, 0.01, 0.1, 1, 10]},
-    scoring='neg_mean_squared_error'
-)
 
-gridSearch.fit(X_train,y_train)
+    gridSearch = GridSearchCV(
+        pipeline,
+        param_grid = {'regressor__solver': ["auto","lsqr","sparse_cg","sag"], 
+                    'regressor__max_iter': [100, 1000, 5000, 10000, 50000], 
+                    'regressor__alpha': [0, 0.001, 0.01, 0.1, 1, 10]},
+        scoring='neg_mean_squared_error'
+    )
+
+    gridSearch.fit(X_train,y_train)
 …
