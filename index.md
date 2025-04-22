@@ -75,12 +75,7 @@ Following this I made the CAUSE.CATEGORY.DETAIL all in title case and then remov
 
 ### Interesting Aggregates
 
- <iframe
- src="assests/heatmap_by_region.html"
- width="800"
- height="600"
- frameborder="0"
- ></iframe>
+![Heatmap showing Avg. Outage Duration by Climate Region & Cause](assests/heatmap_by_region.png "Avg. Outage Duration by Climate Region & Cause")
 
 This chart shows the average duration of an outage by Climate Region and Cause Category. This shows that certain causes like hurricanes have a big impact in almost all regions and wildefires in dryer regions like the west tend to have greater impacts on outage duration.
 
