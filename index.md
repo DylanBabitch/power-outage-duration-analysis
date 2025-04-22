@@ -70,64 +70,64 @@ I will be using mean squared error to evaluate the model's performance because i
 
 I first started by creating my own custom Imputer that fills in the NA values of DEMAND.LOSS.MW that takes the mean for the other rows with the same CAUSE.CATEGORY
 
-`
-from sklearn.base import BaseEstimator, TransformerMixin
+```python
+    from sklearn.base import BaseEstimator, TransformerMixin
 
-class CategoryMeanImputer(BaseEstimator, TransformerMixin):
-    def __init__(self, category_col, value_col):
-        self.category_col = category_col
-        self.value_col = value_col
+    class CategoryMeanImputer(BaseEstimator, TransformerMixin):
+        def __init__(self, category_col, value_col):
+            self.category_col = category_col
+            self.value_col = value_col
 
-    def fit(self, X, y=None):
-        self.category_means_ = (
-            X
-            .groupby(self.category_col)[self.value_col]
-            .mean()
-            .to_dict()
-        )
-        self.global_mean_ = X[self.value_col].mean()
-        return self
+        def fit(self, X, y=None):
+            self.category_means_ = (
+                X
+                .groupby(self.category_col)[self.value_col]
+                .mean()
+                .to_dict()
+            )
+            self.global_mean_ = X[self.value_col].mean()
+            return self
 
-    def transform(self, X):
-        X = X.copy()
-        X[self.value_col] = X.apply(
-            lambda row: (
-                self.category_means_.get(row[self.category_col], self.global_mean_)
-                if pd.isna(row[self.value_col])
-                else row[self.value_col]
-            ), axis=1
-        )
-        return X
-`
+        def transform(self, X):
+            X = X.copy()
+            X[self.value_col] = X.apply(
+                lambda row: (
+                    self.category_means_.get(row[self.category_col], self.global_mean_)
+                    if pd.isna(row[self.value_col])
+                    else row[self.value_col]
+                ), axis=1
+            )
+            return X
+…
 
 Then I created my model: 
 
-`
-from sklearn.pipeline import Pipeline
-from sklearn.compose import  ColumnTransformer
-from sklearn.preprocessing import OneHotEncoder
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_squared_error
+```python
+    from sklearn.pipeline import Pipeline
+    from sklearn.compose import  ColumnTransformer
+    from sklearn.preprocessing import OneHotEncoder
+    from sklearn.linear_model import LinearRegression
+    from sklearn.metrics import mean_squared_error
 
 
-pipeline = Pipeline([
-    ('imputer', CategoryMeanImputer('CAUSE.CATEGORY', 'DEMAND.LOSS.MW')),
-    ('features', ColumnTransformer([
-        ('detail_ohe', OneHotEncoder(handle_unknown='ignore'), ['CAUSE.CATEGORY.DETAIL']),
-        ('mw', 'passthrough', ['DEMAND.LOSS.MW'])
-    ], remainder='drop')), #I only want to use cause.category to impute demand.loss.mw and not in the final model
-    ('regressor', LinearRegression())
-])
+    pipeline = Pipeline([
+        ('imputer', CategoryMeanImputer('CAUSE.CATEGORY', 'DEMAND.LOSS.MW')),
+        ('features', ColumnTransformer([
+            ('detail_ohe', OneHotEncoder(handle_unknown='ignore'), ['CAUSE.CATEGORY.DETAIL']),
+            ('mw', 'passthrough', ['DEMAND.LOSS.MW'])
+        ], remainder='drop')), #I only want to use cause.category to impute demand.loss.mw and not in the final model
+        ('regressor', LinearRegression())
+    ])
 
-pipeline.fit(X_train,y_train)
-`
+    pipeline.fit(X_train,y_train)
+…
 
 
 ## Final Model
 
 After tweaking the columns used and other factors, I arrived at my final model:
 
-`
+```python
 from sklearn.linear_model import Ridge, Lasso, ElasticNet, BayesianRidge
 from sklearn.preprocessing import PowerTransformer, QuantileTransformer
 from sklearn.model_selection import GridSearchCV
@@ -158,4 +158,4 @@ gridSearch = GridSearchCV(
 )
 
 gridSearch.fit(X_train,y_train)
-`
+…
