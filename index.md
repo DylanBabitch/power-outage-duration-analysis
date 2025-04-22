@@ -98,11 +98,12 @@ I first started by creating my own custom Imputer that fills in the NA values of
                 ), axis=1
             )
             return X
-…
+```
 
 Then I created my model: 
 
-``` from sklearn.pipeline import Pipeline
+``` python
+    from sklearn.pipeline import Pipeline
     from sklearn.compose import  ColumnTransformer
     from sklearn.preprocessing import OneHotEncoder
     from sklearn.linear_model import LinearRegression
@@ -119,14 +120,20 @@ Then I created my model:
     ])
 
     pipeline.fit(X_train,y_train)
-…
+```
 
+In this model I used two features, CAUSE.CATEGORY.DETAIL and DEMAND.LOSS.MW. CAUSE.CATEGORY.DETAIL is a quantitative feature and DEMAND.LOSS.MW is nominal. I chose these two columns because I felt like they would be good predictors of total outage duration. This is because certain causes lead to longer outages and the total amount of demand lost is a good predictor of length of outage.
+
+As described earlier, I had to impute missing values in DEMAND.LOSS.MW with their means from other outages with the same CAUSE.CATEGORY (this is not the same as CAUSE.CATEGORY.DETAIL, CAUSE.CATEGORY is a broader category that I used because it had fewer total categories meaning that imputing using it would likely be more accurate). I also had to one hot encode the CAUSE.CATEGORY.DETAIL column to allow it to be used. After this I preformed a simple linear regression on the columns and then fit the data to it with the training data set.
+
+With this model, I achieved a mean squared error of about 6085 hours or 253 days. Square rooting this, it means my average predicition was a little less than 16 days off on average. I do not feel like this is a good predicition because it meant that the average predicition was over half a month off the true value.
 
 ## Final Model
 
 After tweaking the columns used and other factors, I arrived at my final model:
 
-``` from sklearn.linear_model import Ridge, Lasso, ElasticNet, BayesianRidge
+``` python
+    from sklearn.linear_model import Ridge, Lasso, ElasticNet, BayesianRidge
     from sklearn.preprocessing import PowerTransformer, QuantileTransformer
     from sklearn.model_selection import GridSearchCV
 
@@ -150,10 +157,25 @@ After tweaking the columns used and other factors, I arrived at my final model:
     gridSearch = GridSearchCV(
         pipeline,
         param_grid = {'regressor__solver': ["auto","lsqr","sparse_cg","sag"], 
-                    'regressor__max_iter': [100, 1000, 5000, 10000, 50000], 
-                    'regressor__alpha': [0, 0.001, 0.01, 0.1, 1, 10]},
+                    'regressor__max_iter': [10, 100, 1000, 5000, 10000, 50000], 
+                    'regressor__alpha': [0, 0.001, 0.01, 0.1, 1, 1.5, 1.6, 10]},
         scoring='neg_mean_squared_error'
     )
 
     gridSearch.fit(X_train,y_train)
-…
+```
+
+For the final model I added two new features. Firstly, I added CLIMATE.REGION to the model. I did this because I noticed that certain regions tended to lead to longer outages on average. This could be for many reasons such as why the outage was caused and the ability of the workers and availability of resources in certain regions. I found this caused a drop of mean squared error of about 300 hours. The other feature I added was POPPCT_URBAN which is the percent of people in the state which live in an urban area. I did this because outages in urban areas tend to be solved faster because of less distance between potentional power stations and there typically are more people impacted. I found this feature decreased mean squared error by about 75 hours, so not a massive improvement but still helpful. 
+
+Additionally, I switched from linear regression to ridge regression. This was for a few reasons. Firstly, ridge regression can deal with multicolinearity in the data which I noticed in the CLIMATE.REGION and POPPCT_URBAN categories. This is because there tends to only be a handful of states in each climate region meaning it is correlated to the states percentage of urban population. I found that this increased my model's performance over simple linear regression.
+
+Additionally, I added a quantile transformer function to the DEMAND.LOSS.MW and POPPCT_URBAN columns. This is because it helps create a normal distribution from a skewed dataset. This is because I saw that both datasets had a left skew to them and wanted to ensure that these outliers did not have too much impact on the final model.
+
+I used GridSearchCV to find the optimal hyperparameters for the Ridge Regression functions. The values I found were:
+| Hyperparameter | Optimal Value |
+| ----------- | ----------- |
+| Alpha | 1.6 |
+| Max_iter | 10 |
+| Solver | lsqr |
+
+This finalized model achieved a mean squared error of 5573 hours or 232 days. This is an improvement of a little over 500 hours squared over my original model. This means an average of around 4.5 days more accuracy over the original prediction. This is a big improvement and means that that my new predictions are far closer to the true values than the original ones.
