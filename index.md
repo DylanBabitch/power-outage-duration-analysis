@@ -8,7 +8,6 @@ title: Power Outage Duration Analysis
 ### Dylan Babitch  
 dbabitch@umich.edu
 
-*Welcome to my project site…*
 
 ## The Dataset
 The Dataset used for this analysis was from the Purdue University Laboratory for Advancing Sustainable Critical Infrastructure. It tracked major power outages in the United States from January 2000 to July 2016. Major outages are those with at least 50,000 customers impacted and/or with a load loss greater 300MW. It also tracked various pieces of information about the location the outage occured, information about energy prices and usage, and much more. This dataset provides crucial information for power companies and consumers that can help them predict future outages and their severity. The question that I will be trying to answer using this dataset is can you predict the length of a power outage?
@@ -54,12 +53,40 @@ Following this I made the CAUSE.CATEGORY.DETAIL all in title case and then remov
 
 ### Univariate Analysis
 
+ <iframe
+ src="assests/causecategoryunivariate.html"
+ width="800"
+ height="600"
+ frameborder="0"
+ ></iframe>
+
+ This plot shows the distribution of Cause Categories between different outages. From this plot I can see that storms and vandalism are by far the most common cause of major power outages in the dataset.
+
 ### Bivariate Analysis
+
+ <iframe
+ src="assests/bivariatechart.html"
+ width="800"
+ height="600"
+ frameborder="0"
+ ></iframe>
+
+ This plot shows the mean outage duration by climate region. From the chart, I can tell that areas with more hurricanes like the east coast and south tend to have longer outages while regions in the north and west tend to have shorter outages.
 
 ### Interesting Aggregates
 
+ <iframe
+ src="assests/heatmap_by_region.html"
+ width="800"
+ height="600"
+ frameborder="0"
+ ></iframe>
+
+This chart shows the average duration of an outage by Climate Region and Cause Category. This shows that certain causes like hurricanes have a big impact in almost all regions and wildefires in dryer regions like the west tend to have greater impacts on outage duration.
+
 ### Imputation
 
+I used mean value imputation on the columns without an OUTAGE.DURATION. I imputated by the average for the other outages with the same CAUSE.CATEGORY.DETAIL.
 
 ## The Prediction Problem
 The problem I will be trying to predict the duration of a power outage. This problem will involve regression because the duration of an outage is a continuous, numerical value. The variable I will be predicting is outage duration in minutes (the cleaned OUTAGE.DURATION column).
@@ -115,7 +142,7 @@ Then I created my model:
         ('features', ColumnTransformer([
             ('detail_ohe', OneHotEncoder(handle_unknown='ignore'), ['CAUSE.CATEGORY.DETAIL']),
             ('mw', 'passthrough', ['DEMAND.LOSS.MW'])
-        ], remainder='drop')), #I only want to use cause.category to impute demand.loss.mw and not in the final model
+        ], remainder='drop')), 
         ('regressor', LinearRegression())
     ])
 
@@ -148,7 +175,7 @@ After tweaking the columns used and other factors, I arrived at my final model:
         ('features', ColumnTransformer([
             ('detail_ohe', OneHotEncoder(handle_unknown='ignore'), ['CAUSE.CATEGORY.DETAIL', 'CLIMATE.REGION']),
             ("quantile_loss", qt, ["DEMAND.LOSS.MW", 'POPPCT_URBAN'])
-        ], remainder='drop')), #I only want to use cause.category to impute demand.loss.mw and not in the final model
+        ], remainder='drop')),
         ('regressor', Ridge())
     ])
 
