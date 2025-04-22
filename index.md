@@ -1,11 +1,11 @@
 ---
-layout: default       # uses the default layout from the Cayman theme
-title: Power Outage Duration Analysis            # sets the page title
+layout: default
+title: Power Outage Duration Analysis
 ---
 
 # Can you predict power outage duration?
 
 ### Dylan Babitch  
-### dbabitch@umich.edu
+dbabitch@umich.edu
 
-*Welcome to my project site…*  
+*Welcome to my project site…*
