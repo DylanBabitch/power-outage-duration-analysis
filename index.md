@@ -63,4 +63,99 @@ Following this I made the CAUSE.CATEGORY.DETAIL all in title case and then remov
 
 ## The Prediction Problem
 The problem I will be trying to predict the duration of a power outage. This problem will involve regression because the duration of an outage is a continuous, numerical value. The variable I will be predicting is outage duration in minutes (the cleaned OUTAGE.DURATION column).
+
 I will be using mean squared error to evaluate the model's performance because it is a good indicator of how off the predictions the model makes are from the actual duration of the outages. I chose it over other metrics like mean absolute error because I feel as though the impact of a bad predicition increases more quadratically rather than linearly. This is because a very far off prediction can greatly impact how much a consumer or company cares about a specific outage, causing them to over or under estimate how much they should prepare. 
+
+## Baseline Model
+
+I first started by creating my own custom Imputer that fills in the NA values of DEMAND.LOSS.MW that takes the mean for the other rows with the same CAUSE.CATEGORY
+
+`
+from sklearn.base import BaseEstimator, TransformerMixin
+
+class CategoryMeanImputer(BaseEstimator, TransformerMixin):
+    def __init__(self, category_col, value_col):
+        self.category_col = category_col
+        self.value_col = value_col
+
+    def fit(self, X, y=None):
+        self.category_means_ = (
+            X
+            .groupby(self.category_col)[self.value_col]
+            .mean()
+            .to_dict()
+        )
+        self.global_mean_ = X[self.value_col].mean()
+        return self
+
+    def transform(self, X):
+        X = X.copy()
+        X[self.value_col] = X.apply(
+            lambda row: (
+                self.category_means_.get(row[self.category_col], self.global_mean_)
+                if pd.isna(row[self.value_col])
+                else row[self.value_col]
+            ), axis=1
+        )
+        return X
+`
+
+Then I created my model: 
+
+`
+from sklearn.pipeline import Pipeline
+from sklearn.compose import  ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error
+
+
+pipeline = Pipeline([
+    ('imputer', CategoryMeanImputer('CAUSE.CATEGORY', 'DEMAND.LOSS.MW')),
+    ('features', ColumnTransformer([
+        ('detail_ohe', OneHotEncoder(handle_unknown='ignore'), ['CAUSE.CATEGORY.DETAIL']),
+        ('mw', 'passthrough', ['DEMAND.LOSS.MW'])
+    ], remainder='drop')), #I only want to use cause.category to impute demand.loss.mw and not in the final model
+    ('regressor', LinearRegression())
+])
+
+pipeline.fit(X_train,y_train)
+`
+
+
+## Final Model
+
+After tweaking the columns used and other factors, I arrived at my final model:
+
+`
+from sklearn.linear_model import Ridge, Lasso, ElasticNet, BayesianRidge
+from sklearn.preprocessing import PowerTransformer, QuantileTransformer
+from sklearn.model_selection import GridSearchCV
+
+qt = QuantileTransformer(
+    n_quantiles=100,
+    output_distribution="normal",
+    random_state=98
+)
+
+pipeline = Pipeline([
+    ('imputer', CategoryMeanImputer('CAUSE.CATEGORY', 'DEMAND.LOSS.MW')),
+    ('features', ColumnTransformer([
+        ('detail_ohe', OneHotEncoder(handle_unknown='ignore'), ['CAUSE.CATEGORY.DETAIL', 'CLIMATE.REGION']),
+        ("quantile_loss", qt, ["DEMAND.LOSS.MW", 'POPPCT_URBAN'])
+    ], remainder='drop')), #I only want to use cause.category to impute demand.loss.mw and not in the final model
+    ('regressor', Ridge())
+])
+
+
+
+gridSearch = GridSearchCV(
+    pipeline,
+    param_grid = {'regressor__solver': ["auto","lsqr","sparse_cg","sag"], 
+                  'regressor__max_iter': [100, 1000, 5000, 10000, 50000], 
+                  'regressor__alpha': [0, 0.001, 0.01, 0.1, 1, 10]},
+    scoring='neg_mean_squared_error'
+)
+
+gridSearch.fit(X_train,y_train)
+`
