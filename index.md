@@ -199,6 +199,7 @@ Additionally, I switched from linear regression to ridge regression. This was fo
 Additionally, I added a quantile transformer function to the DEMAND.LOSS.MW and POPPCT_URBAN columns. This is because it helps create a normal distribution from a skewed dataset. This is because I saw that both datasets had a left skew to them and wanted to ensure that these outliers did not have too much impact on the final model.
 
 I used GridSearchCV to find the optimal hyperparameters for the Ridge Regression functions. The values I found were:
+
 | Hyperparameter | Optimal Value |
 | ----------- | ----------- |
 | Alpha | 1.6 |
