@@ -51,6 +51,15 @@ I then removed all the outages that lasted less than 5 minutes in total. This wa
 
 Following this I made the CAUSE.CATEGORY.DETAIL all in title case and then removed all the detailed causes with less than 3 occurances because they made the predictions more difficult.
 
+After cleaning, the first 10 columns of the dataframe looked like:
+
+ <iframe
+ src="assests/tablehead.html"
+ width="800"
+ height="600"
+ frameborder="0"
+ ></iframe>
+
 ### Univariate Analysis
 
  <iframe
